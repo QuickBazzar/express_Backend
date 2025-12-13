@@ -5,7 +5,7 @@ const config  = require('./config')
 function authorizeUser(req, res, next) {
 
   // Allow public routes
-  if (req.url === '/user/signin' || req.url === '/user/signup') {
+  if (req.url === '/user/signin' || req.url === '/user/signup' || req.url === '/user/web/signup') {
     return next()
   }
 
