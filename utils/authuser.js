@@ -1,26 +1,33 @@
 const jwt = require('jsonwebtoken')
 const result = require('./result')
 const config  = require('./config')
-const { route } = require('../routes/user')
 
 function authorizeUser(req, res, next) {
-    // For checking the incoming request and the token
-    const url = req.url
-    if (url == '/user/signin' || url == '/user/signup')
-        next()
-    else {
-        const token = req.headers.token
-        if (token) {
-            try {
-                const payload = jwt.verify(token, config.SECRET)
-                req.headers.uid = payload.uid
-                next()
-            } catch (ex) {
-                res.send(result.createResult('Invalid Token'))
-            }
-        } else
-            res.send(result.createResult('Token is Missing'))
+
+  // Allow public routes
+  if (req.url === '/user/signin' || req.url === '/user/signup') {
+    return next()
+  }
+
+  const authHeader = req.headers.authorization
+  if (!authHeader)
+    return res.send(result.createResult('Token missing'))
+
+  const token = authHeader.split(' ')[1]
+
+  try {
+    const payload = jwt.verify(token, config.SECRET)
+
+    // Attaching user info to request
+    req.user = {
+      userId: payload.userId,
+      role: payload.role
     }
+
+    next()
+  } catch (ex) {
+    res.send(result.createResult('Invalid Token'))
+  }
 }
 
 module.exports = authorizeUser

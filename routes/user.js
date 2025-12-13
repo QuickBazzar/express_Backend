@@ -8,162 +8,144 @@ const config = require('../utils/config')
 
 const router = express.Router()
 
-//Registration API for Application
+// SIGNUP (APP - RETAILER ONLY)
 router.post('/signup', (req, res) => {
-    const { name, email, password } = req.body;
-    const role = 'RETAILER';
-    const sql = `INSERT INTO users (Name, Email, PasswordHash, Role) VALUES (?, ?, ?, ?)`;
+  const { name, email, password } = req.body
+  const role = 'RETAILER'
 
-    bcrypt.hash(password, config.SALT_ROUND, (err, hashedPass) => {
-        if (err) {
-            return res.send(result.createResult(err));
-        }
-        if (hashedPass) {
-            pool.query(sql, [name, email, hashedPass, role], (err, data) => {
-                res.send(result.createResult(err, data));
-            });
-        } else {
-            res.send(result.createResult(err));
-        }
-    });
-});
+  bcrypt.hash(password, config.SALT_ROUND, (err, hash) => {
+    if (err) 
+        return res.send(result.createResult(err))
 
-//Login 
+    const sql = `INSERT INTO users (Name, Email, PasswordHash, Role) VALUES (?, ?, ?, ?)`
+    pool.query(sql, [name, email, hash, role], (err, data) => {
+      res.send(result.createResult(err, data))
+    })
+  })
+})
+
+// SIGNIN
 router.post('/signin', (req, res) => {
-    const {email, password} = req.body
-    const sql = `SELECT * FROM users WHERE email = ?`
-    pool.query(sql, [email], (err, data) => {
-        if(err)
-            res.send(result.createResult(err))
-        else if(data.length == 0)
-            res.send(result.createResult("Invalid Email"))
-        else{
-            bcrypt.compare(password, data[0].PasswordHash, (err, passwordStatus) => {
-                console.log(passwordStatus)
-                if(passwordStatus){
-                    const payload = {
-                        userId : data[0].userId,
-                    }
-                    const token = jwt.sign(payload, config.SECRET)
-                    const user = {
-                        token,
-                        name : data[0].Name,
-                        email: data[0].Email,
-                        role: data[0].Role
-                    }
-                    res.send(result.createResult(null, user))
-                }
-                else
-                    res.send(result.createResult('Invalid Password'))
-            })
-        }
+  const { email, password } = req.body
+  const sql = `SELECT * FROM users WHERE Email = ?`
+
+  pool.query(sql, [email], (err, data) => {
+    if (err) return res.send(result.createResult(err))
+    if (data.length === 0)
+      return res.send(result.createResult('Invalid Email'))
+
+    bcrypt.compare(password, data[0].PasswordHash, (err, status) => {
+      if (!status)
+        return res.send(result.createResult('Invalid Password'))
+
+      const token = jwt.sign(
+        {
+          userId: data[0].UserID,
+          role: data[0].Role
+        },
+        config.SECRET,
+        { expiresIn: '1d' }
+      )
+
+      res.send(result.createResult(null, {
+        token,
+        name: data[0].Name,
+        email: data[0].Email,
+        role: data[0].Role
+      }))
     })
+  })
 })
 
-//Registration API for WEB Application
+// WEB SIGNUP (ADMIN / WHOLESALER / RETAILER)
 router.post('/web/signup', (req, res) => {
-    const { name, email, password, role } = req.body; // role allowed
-    if (!['ADMIN', 'WHOLESALER', 'RETAILER'].includes(role)) {
-        return res.send(result.createResult('Invalid role selected.'));
+  const { name, email, password, role } = req.body
+
+  if (!['ADMIN', 'WHOLESALER', 'RETAILER'].includes(role))
+    return res.send(result.createResult('Invalid role'))
+
+  bcrypt.hash(password, config.SALT_ROUND, (err, hash) => {
+    if (err) 
+        return res.send(result.createResult(err))
+
+    const sql = `INSERT INTO users (Name, Email, PasswordHash, Role) VALUES (?, ?, ?, ?)`
+    pool.query(sql, [name, email, hash, role], (err, data) => {
+      res.send(result.createResult(err, data))
+    })
+  })
+})
+
+// GET ALL USERS (ADMIN ONLY) 
+router.get('/', (req, res) => {
+  if (req.user.role !== 'ADMIN')
+    return res.send(result.createResult('Access denied'))
+
+  const sql = `SELECT UserID, Name, Email, Role FROM users` 
+  pool.query(sql,(err, data) =>{
+    res.send(result.createResult(err, data))
+  })
+})
+
+// GET OWN PROFILE
+router.get('/profile', (req, res) => {
+  const uid = req.user.userId
+
+  pool.query(`SELECT Name, Email, Role FROM users WHERE UserID = ?`,[uid], (err, data) => {
+      if (data.length === 0)
+        return res.send(result.createResult('User not found'))
+
+      res.send(result.createResult(null, data[0]))
     }
-    const sql = `INSERT INTO users (Name, Email, PasswordHash, Role) VALUES (?, ?, ?, ?)`;
-    bcrypt.hash(password, config.SALT_ROUND, (err, hashedPass) => {
-        if (err) {
-            return res.send(result.createResult(err));
-        }
-        if (hashedPass) {
-            pool.query(sql, [name, email, hashedPass, role], (err, data) => {
-                res.send(result.createResult(err, data));
-            });
-        } else {
-            res.send(result.createResult(err));
-        }
-    });
-});
-
-//Give All Users
-router.get('/',(req, res) => {
-    const sql = `SELECT * From users`
-    pool.query(sql, (err, data)=>{
-        res.send(result.createResult(err, data))
-    })
+  )
 })
 
-//Get User By Id
-router.get('/profile/',(req, res) => {
-    const uid = req.headers.uid
-    const sql = `SELECT * FROM users WHERE UserId = ?`
-    pool.query(sql, [uid], (err, data) => {
-        if(err)
-            res.send(result.createResult(err))
-        else if(data.length == 0){
-            res.send(result.createResult("User not found"))
-        }
-        else{
-            const user = {
-                name : data[0].Name,
-                email: data[0].Email,
-                role: data[0].Role
-            }
-            res.send(result.createResult(null, user))
-        }
-    })
+// UPDATE OWN EMAIL
+router.patch('/update-user', (req, res) => {
+  const uid = req.user.userId
+  const { email } = req.body
+  const sql = `UPDATE users SET Email=? WHERE UserID=?`
+
+  pool.query(sql, [email, uid], (err, data) => {
+    res.send(result.createResult(err, data))
+  })
 })
 
-router.put('/update-user', (req, res) => {
-    const {email} = req.body
-    const uid = req.headers.uid
-    const sql = `UPDATE users SET Email = ? WHERE UserId = ?`
-    pool.query(sql, [email, uid], (err, data) => {
-        res.send(result.createResult(err, data))
-    })
+// DELETE USER (ADMIN ONLY)
+router.delete('/delete-user', (req, res) => {
+  if (req.user.role !== 'ADMIN')
+    return res.send(result.createResult('Access denied'))
+
+  const { userId } = req.body
+  const sql = `DELETE FROM users WHERE UserID=?`
+
+  pool.query(sql, [userId],(err, data) => {
+    res.send(result.createResult(err, data))
+  })
 })
 
-router.delete('/delete-user',(req, res) => {
-    const uid = req.body.uid
-    const sql = `DELETE FROM users WHERE UserId = ?`
-    pool.query(sql, [uid], (err, data) => {
-        res.send(result.createResult(err, data))
-    })
-})
-
+// UPDATE PASSWORD (OWN ACCOUNT)
 router.patch('/update-password', (req, res) => {
-    const uid = req.headers.uid
-    const {oldPassword, newPassword} = req.body
+  const uid = req.user.userId
+  const { oldPassword, newPassword } = req.body
+  const sql = `SELECT PasswordHash FROM users WHERE UserID=?`
 
-    if(!oldPassword || !newPassword){
-        return res.send(result.createResult("Password Required!!"))
-    }
+  pool.query(sql, [uid], (err, data) => {
+      if (data.length === 0)
+        return res.send(result.createResult('User not found'))
 
-    const sql = `SELECT PasswordHash FROM users WHERE UserId = ?`
-    pool.query(sql, [uid], (err, data) => {
-        if(err)
-            return res.send(result.createResult(err))
-        else if(data.length == 0)
-            return res.send(result.createResult("User Not Found!!"))
+      bcrypt.compare(oldPassword, data[0].PasswordHash, (err, status) => {
+        if (!status)
+          return res.send(result.createResult('Old password incorrect'))
 
-        bcrypt.compare(oldPassword, data[0].PasswordHash, (err, status) => {
-            if(err)
-                return res.send(result.createResult(err))
-            if(!status)
-                return res.send(result.createResult("Old Password is incorrect !!"))
-
-            bcrypt.hash(newPassword, config.SALT_ROUND, (err, hash) => {
-                if(err)
-                    return res.send(result.createResult(err))
-
-                const sql = `UPDATE users SET PasswordHash = ? WHERE UserId = ?`
-
-                pool.query(sql, [hash, uid], (err, UpdatedStatus) => {
-                    if(err)
-                        res.send(result.createResult(err))
-                    else
-                        res.send(result.createResult(null, "Password Updated SuccessFully!!"))
-                })
-            })
+        bcrypt.hash(newPassword, config.SALT_ROUND, (err, hash) => {
+          const sql = `UPDATE users SET PasswordHash=? WHERE UserID=?`
+          pool.query(sql,[hash, uid], (err) =>{
+            res.send(result.createResult(err, 'Password updated successfully'))
+          })
         })
-    })
+      })
+    }
+  )
 })
-
 
 module.exports = router
