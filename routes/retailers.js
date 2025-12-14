@@ -15,7 +15,7 @@ router.get('/all', (req, res) => {
   })
 })
 
-// GET MY RETAILERS (RETAILER)
+// GET OWN PROFILE RETAILER (RETAILER)
 router.get('/my', (req, res) => {
   if (req.user.role !== 'RETAILER')
     return res.send(result.createResult('Access denied'))
@@ -74,16 +74,6 @@ router.put('/update/:id', (req, res) => {
   })
 })
 
-// DELETE RETAILER (ADMIN ONLY)
-router.delete('/delete/:id', (req, res) => {
-    if (req.user.role !== 'ADMIN')
-        return res.send(result.createResult('Access denied'))
-    const sql = `DELETE FROM users WHERE UserID = ? AND Role = 'RETAILER'`
-    pool.query(sql, [req.params.id], (err, data) => {
-        res.send(result.createResult(err, data))
-    })
-})
-
 // GET RETAILER WALLET Balance(RETAILER AND ADMIN)
 router.get('/wallet/:id', (req, res) => {
   // ROLE CHECK
@@ -113,7 +103,7 @@ router.get('/wallet/:id', (req, res) => {
 })
 
 // Update Retailer Wallet Balance (RETAILER & ADMIN)
-router.put('/update/wallet/:id', (req, res) => {
+router.patch('/update/wallet/:id', (req, res) => {
   // ROLE CHECK
   if (req.user.role !== 'ADMIN' && req.user.role !== 'RETAILER')
     return res.send(result.createResult('Access denied'))
