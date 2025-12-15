@@ -24,7 +24,7 @@ router.post('/signup', (req, res) => {
   })
 })
 
-// SIGNIN
+// SIGNI-N
 router.post('/signin', (req, res) => {
   const { email, password } = req.body
   const sql = `SELECT * FROM users WHERE Email = ?`
@@ -75,16 +75,6 @@ router.post('/web/signup', (req, res) => {
   })
 })
 
-// GET ALL USERS (ADMIN ONLY) 
-router.get('/', (req, res) => {
-  if (req.user.role !== 'ADMIN')
-    return res.send(result.createResult('Access denied'))
-
-  const sql = `SELECT UserID, Name, Email, Role FROM users` 
-  pool.query(sql,(err, data) =>{
-    res.send(result.createResult(err, data))
-  })
-})
 
 // GET OWN PROFILE
 router.get('/profile', (req, res) => {
@@ -106,19 +96,6 @@ router.patch('/update-user', (req, res) => {
   const sql = `UPDATE users SET Email=? WHERE UserID=?`
 
   pool.query(sql, [email, uid], (err, data) => {
-    res.send(result.createResult(err, data))
-  })
-})
-
-// DELETE USER (ADMIN ONLY)
-router.delete('/delete-user', (req, res) => {
-  if (req.user.role !== 'ADMIN')
-    return res.send(result.createResult('Access denied'))
-
-  const { userId } = req.body
-  const sql = `DELETE FROM users WHERE UserID=?`
-
-  pool.query(sql, [userId],(err, data) => {
     res.send(result.createResult(err, data))
   })
 })
