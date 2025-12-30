@@ -3,8 +3,6 @@ const pool = require('../utils/db')
 const result = require('../utils/result')
 
 const router = express.Router()
-
-
 // ADD ORDER ITEM (RETAILER ONLY)
 router.post('/', (req, res) => {
   if (req.user.role !== 'RETAILER')

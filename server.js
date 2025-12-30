@@ -12,6 +12,7 @@ const paymentRouter = require('./routes/payments')
 const productRouter = require('./routes/product.js')
 const wholesalerRouter = require('./routes/wholesaler.js')
 
+
 const app = express()
 app.use(cors())
 app.use(express.json())
