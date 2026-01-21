@@ -18,11 +18,11 @@ router.get('/user/all', (req, res) => {
 })
 
 // DELETE USER (ADMIN ONLY)
-router.delete('/delete-user', (req, res) => {
+router.delete('/delete-user/:userId', (req, res) => {
   if (req.user.role !== 'ADMIN')
     return res.send(result.createResult('Access denied'))
 
-  const { userId } = req.body
+  const { userId } = req.params
   const sql = `DELETE FROM users WHERE UserID=?`
 
   pool.query(sql, [userId],(err, data) => {
