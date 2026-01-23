@@ -30,6 +30,33 @@ router.delete('/delete-user/:userId', (req, res) => {
   })
 })
 
+//GET USER By ID (ADMIN ONLY)
+router.get('/user/:id', (req, res) => {
+  if (req.user.role !== 'ADMIN')
+    return res.send(result.createResult('Access denied'))
+
+  const sql = `SELECT UserID, Name, Email, Role FROM users WHERE UserID=?`
+
+  pool.query(sql, [req.params.id], (err, data) => {
+    if (data.length === 0)
+      return res.send(result.createResult('User not found'))
+
+    res.send(result.createResult(err, data[0]))
+  })
+})
+
+//UPDATE USER BY ID (ADMIN ONLY)
+router.patch('/user/:id', (req, res) => {
+  if (req.user.role !== 'ADMIN')
+    return res.send(result.createResult('Access denied'))
+
+  const { email, role } = req.body
+  const sql = `UPDATE users SET Email=?, Role=? WHERE UserID=?`
+
+  pool.query(sql, [email, role, req.params.id], (err, data) => {
+    res.send(result.createResult(err, data))
+  })
+})
 
 //RETAILER RELATED API's
 
@@ -44,8 +71,24 @@ router.get('/all', (req, res) => {
   })
 })
 
+// GET RETAILER BY ID (ADMIN)
+router.get('/find/:id', (req, res) => {
+  if (req.user.role !== 'ADMIN')
+    return res.send(result.createResult('Access denied'))
+
+  const sql = `SELECT * FROM retailer WHERE RetailerID = ?`
+
+  pool.query(sql, [req.params.id], (err, data) => {
+    if (!err && data.length === 0)
+      return res.send(result.createResult('Retailer not found'))
+
+    res.send(result.createResult(err, data[0]))
+  })
+})
+
+
 // DELETE RETAILER (ADMIN ONLY)
-router.delete('/delete/:id', (req, res) => {
+router.delete('/delete-retailer/:id', (req, res) => {
     if (req.user.role !== 'ADMIN')
         return res.send(result.createResult('Access denied'))
     const sql = `DELETE FROM users WHERE UserID = ? AND Role = 'RETAILER'`
