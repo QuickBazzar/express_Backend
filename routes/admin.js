@@ -17,6 +17,7 @@ router.get('/user/all', (req, res) => {
   })
 })
 
+
 // DELETE USER (ADMIN ONLY)
 router.delete('/delete-user/:userId', (req, res) => {
   if (req.user.role !== 'ADMIN')
@@ -86,12 +87,61 @@ router.get('/find/:id', (req, res) => {
   })
 })
 
-
 // DELETE RETAILER (ADMIN ONLY)
 router.delete('/delete-retailer/:id', (req, res) => {
     if (req.user.role !== 'ADMIN')
         return res.send(result.createResult('Access denied'))
     const sql = `DELETE FROM users WHERE UserID = ? AND Role = 'RETAILER'`
+    pool.query(sql, [req.params.id], (err, data) => {
+        res.send(result.createResult(err, data))
+    })
+})
+
+//WHOLESALER RELATED API's 
+
+// GET ALL WHOLESALERS (ADMIN ONLY)
+router.get('/wholesaler/all', (req, res) => {
+  if (req.user.role !== 'ADMIN')
+      return res.send(result.createResult('Access denied'))
+  
+  const sql = `SELECT UserID, Name, Email FROM users WHERE Role = 'WHOLESALER'`
+  pool.query(sql, (err, data) => {
+    res.send(result.createResult(err, data))
+  })
+})
+
+// GET WHOLESALER BY ID
+router.get('/wholesaler/:id', (req, res) => {
+    if (req.user.role !== 'ADMIN')
+        return res.send(result.createResult('Access denied'))
+
+    const sql = `SELECT UserID, Name, Email FROM users WHERE UserID = ? AND Role = 'WHOLESALER'`
+    pool.query(sql, [req.params.id], (err, data) => {
+        if (!err && data.length === 0)
+        return res.send(result.createResult('Wholesaler not found'))
+        res.send(result.createResult(err, data[0]))
+    })
+})
+
+// UPDATE WHOLESALER EMAIL (ADMIN ONLY)
+router.put('/wholesaler/:id', (req, res) => {
+    if (req.user.role !== 'ADMIN')
+        return res.send(result.createResult('Access denied'))
+    const { email } = req.body
+    if (!email)
+        return res.send(result.createResult('Email is required'))
+
+    const sql = `UPDATE users SET Email = ? WHERE UserID = ? AND Role = 'WHOLESALER'`
+    pool.query(sql, [email, req.params.id], (err, data) => {
+        res.send(result.createResult(err, data))
+    })
+})
+
+// DELETE WHOLESALER (ADMIN ONLY)
+router.delete('/wholesaler/:id', (req, res) => {
+    if (req.user.role !== 'ADMIN')
+        return res.send(result.createResult('Access denied'))
+    const sql = `DELETE FROM users WHERE UserID = ? AND Role = 'WHOLESALER'`
     pool.query(sql, [req.params.id], (err, data) => {
         res.send(result.createResult(err, data))
     })
