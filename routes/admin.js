@@ -260,7 +260,8 @@ router.get('/summary', (req, res) => {
 
   const sql = `SELECT (SELECT COUNT(*) FROM users) AS totalUsers,(SELECT COUNT(*) FROM retailer) AS totalRetailers, 
     (SELECT COUNT(*) FROM wholesaler) AS totalWholesalers,(SELECT COUNT(*) FROM orders) AS totalOrders,
-    (SELECT SUM(GrandTotal) FROM orders WHERE PaymentStatus = 'PAID') AS totalRevenue,(SELECT SUM(GSTAmount) FROM orders WHERE PaymentStatus = 'PAID') AS totalGST`
+    (SELECT SUM(GrandTotal) FROM orders WHERE PaymentStatus = 'PAID') AS totalRevenue,(SELECT SUM(GSTAmount) FROM orders WHERE PaymentStatus = 'PAID') AS totalGST,
+    (SELECT COUNT(*) FROM product) AS totalProducts`
 
   pool.query(sql, (err, data) => {
     res.send(result.createResult(err, data[0]))
