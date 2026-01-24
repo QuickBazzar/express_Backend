@@ -187,7 +187,7 @@ router.get('/product/all', (req, res) => {
   if (req.user.role !== 'ADMIN')
     return res.send(result.createResult('Access denied'))
 
-  const sql = `SELECT p.*, w.WholesalerName FROM product p JOIN wholesaler w ON p.WholesalerID = w.WholesalerID ORDER BY p.ProductID DESC`
+  const sql = `SELECT p.*, w.BusinessName FROM product p JOIN wholesaler w ON p.WholesalerID = w.WholesalerID ORDER BY p.ProductID DESC`
 
   pool.query(sql, (err, data) => {
     res.send(result.createResult(err, data))
@@ -224,7 +224,7 @@ router.delete('/product/:id', (req, res) => {
 })
 
 // BLOCK / UNBLOCK PRODUCT (ADMIN)
-router.patch('/admin/:id/status', (req, res) => {
+router.patch('/product/status/:id/', (req, res) => {
   if (req.user.role !== 'ADMIN')
     return res.send(result.createResult('Access denied'))
 
@@ -240,7 +240,7 @@ router.patch('/admin/:id/status', (req, res) => {
 })
 
 // LOW STOCK PRODUCTS (ADMIN)
-router.get('/admin/low-stock', (req, res) => {
+router.get('/product/low-stock', (req, res) => {
   if (req.user.role !== 'ADMIN')
     return res.send(result.createResult('Access denied'))
 
