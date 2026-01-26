@@ -5,7 +5,6 @@ const multer = require('multer')
 const pool = require('../utils/db')
 const result = require('../utils/result')
 const authorizeUser = require('../utils/authuser')
-<<<<<<< HEAD
 const multer = require('multer')
 const path = require('path')
 
@@ -19,10 +18,6 @@ const storage = multer.diskStorage({
 })
 const upload = multer({ storage })
 
-=======
-
-const router = express.Router()
->>>>>>> b5749a1 (refine product, retailer, and wholesaler APIs)
 
 
 const storage = multer.diskStorage({
@@ -39,7 +34,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage })
 router.post('/', authorizeUser, upload.single('ProductImage'), (req, res) => {
-<<<<<<< HEAD
   console.log('REQ.BODY:', req.body)
   console.log('REQ.FILE:', req.file)
   console.log('REQ.USER:', req.user)
@@ -72,32 +66,6 @@ router.post('/', authorizeUser, upload.single('ProductImage'), (req, res) => {
 })
 
 //GET ALL PRODUCT
-=======
-    if (req.user.role !== 'WHOLESALER')
-      return res.send(result.createResult('Access denied'))
-
-    const { ProductName, Category, Price, StockQuantity, Description } = req.body
-
-    if (!ProductName || !Price)
-      return res.send(result.createResult('Missing required fields'))
-
-    const findWholesalerSql =
-      `SELECT WholesalerID FROM wholesaler WHERE UserID = ?`
-
-    pool.query(findWholesalerSql, [req.user.userId], (err, rows) => {
-      if (err) return res.send(result.createResult(err))
-      if (rows.length === 0)
-        return res.send(result.createResult('Wholesaler profile not found'))
-
-      const sql = `
-        INSERT INTO product (ProductName, Category, Price, StockQuantity, WholesalerID, ProductImage, Description) VALUES (?, ?, ?, ?, ?, ?, ?)`
-
-      pool.query(sql,[ ProductName, Category || null, Price, StockQuantity || 0, rows[0].WholesalerID, req.file ? req.file.filename : null, Description || null], (err, data) => res.send(result.createResult(err, data)))
-    })
-  }
-)
-
->>>>>>> b5749a1 (refine product, retailer, and wholesaler APIs)
 router.get('/all', (req, res) => {
   const sql = `SELECT * FROM product WHERE IsActive = 1`
   pool.query(sql, (err, data) =>
@@ -118,7 +86,6 @@ router.get('/:id', (req, res) => {
   })
 })
 
-<<<<<<< HEAD
 // Update product (WHOLESALER only)
 router.put('/:id', authorizeUser, upload.single('ProductImage'), (req, res) => {
 
@@ -204,9 +171,6 @@ router.put('/:id', authorizeUser, upload.single('ProductImage'), (req, res) => {
 
 //Delete Product
 router.delete('/:id',authorizeUser, (req, res) => {
-=======
-router.get('/products/my-products', authorizeUser, (req, res) => {
->>>>>>> b5749a1 (refine product, retailer, and wholesaler APIs)
   if (req.user.role !== 'WHOLESALER')
     return res.send(result.createResult('Access denied'))
 
