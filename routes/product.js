@@ -181,7 +181,6 @@ router.delete('/:id',authorizeUser, (req, res) => {
   })
 })
 
-
 // Search by product name
 router.get('/search/:name', (req, res) => {
   const sql = `SELECT * FROM product WHERE ProductName LIKE ?`

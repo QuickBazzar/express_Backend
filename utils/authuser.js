@@ -23,7 +23,6 @@ function authorizeUser(req, res, next) {
       userId: payload.userId,
       role: payload.role
     }
-
     next()
   } catch (ex) {
     res.send(result.createResult('Invalid Token'))
