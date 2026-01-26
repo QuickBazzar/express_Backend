@@ -14,26 +14,40 @@ router.post('/', (req, res) => {
   if (!orderId || !amount)
     return res.send(result.createResult('OrderId and amount are required'))
 
-  const checkSql = `SELECT OrderID FROM orders WHERE OrderID = ? AND RetailerID = ?`
+  const checkSql = `SELECT o.OrderID FROM orders o JOIN retailer r ON o.RetailerID = r.RetailerID WHERE o.OrderID = ? AND r.UserID = ?`
 
-  pool.query(checkSql, [orderId, req.user.userId], (err, orders) => {
+  pool.query(checkSql, [orderId, req.user.userId], (err, rows) => {
     if (err) return res.send(result.createResult(err))
 
-    if (orders.length === 0)
+    // Check authorization BEFORE processing payment
+    if (rows.length === 0)
       return res.send(result.createResult('Order not found or unauthorized'))
 
+    // Handle CASH payment mode
+    if (paymentMode === 'CASH') {
+      pool.query(
+        `UPDATE orders SET PaymentStatus='PENDING' WHERE OrderID=?`,
+        [orderId],
+        (err) => {
+          if (err) return res.send(result.createResult(err))
+        }
+      )
+    }
+    
     const paySql = `INSERT INTO payment (OrderID, PaymentMode, Amount) VALUES (?, ?, ?)`
 
     pool.query(paySql, [orderId, paymentMode, amount], (err, data) => {
       if (err) return res.send(result.createResult(err))
+
       res.send(result.createResult(null, {
-        message: 'Payment initiated',
         paymentId: data.insertId,
-        status: 'PENDING'
+        status: 'PENDING',
+        message: 'Payment initiated'
       }))
     })
   })
 })
+
 
 // GET PAYMENT BY ORDER ID
 router.get('/order/:id', (req, res) => {
