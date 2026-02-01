@@ -1,26 +1,27 @@
-// builtin modules
+require('dotenv').config()
+
 const express = require('express')
 const cors = require('cors')
 
-// user-defined modules
+// routes
 const authorizeUser = require('./utils/authuser')
-const userRouter = require('./routes/user.js')
-const retailerRouter = require('./routes/retailers.js')
+const userRouter = require('./routes/user')
+const retailerRouter = require('./routes/retailers')
 const reportsRouter = require('./routes/reports')
 const adminRouter = require('./routes/admin')
 const paymentRouter = require('./routes/payments')
-const productRouter = require('./routes/product.js')
-const wholesalerRouter = require('./routes/wholesaler.js')
-const orderRouter = require('./routes/order.js')
-const orderItemRouter = require('./routes/orderItem.js')
+const productRouter = require('./routes/product')
+const wholesalerRouter = require('./routes/wholesaler')
+const orderRouter = require('./routes/order')
+const orderItemRouter = require('./routes/orderItem')
 
 
 const app = express()
 
-app.use(cors())
+app.use(cors({
+  origin: '*'
+}))
 app.use(express.json())
-
-app.use('/productimages', express.static('productimages'))
 
 app.use(authorizeUser)
 
@@ -32,9 +33,9 @@ app.use('/payments', paymentRouter)
 app.use('/product', productRouter)
 app.use('/wholesaler', wholesalerRouter)
 app.use('/orders', orderRouter)
-app.use("/orderitem", orderItemRouter)
+app.use('/orderitem', orderItemRouter)
 
-
-app.listen(4000, '0.0.0.0', () => {
-  console.log('Server Started At Port 4000')
+const PORT = process.env.PORT || 4000
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server started on port ${PORT}`)
 })
