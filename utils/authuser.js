@@ -1,11 +1,19 @@
 const jwt = require('jsonwebtoken')
 const result = require('./result')
-const config  = require('./config')
+const config = require('./config')
 
 function authorizeUser(req, res, next) {
 
-  // Allow public routes
-  if (req.url === '/user/signin' || req.url === '/user/signup' || req.url === '/user/web/signup' || req.url === '/product/all') {
+  // Public routes (safe check)
+  const publicRoutes = [
+    '/user/signin',
+    '/user/signup',
+    '/user/web/signup',
+    '/product/all',
+    '/orders'
+  ]
+
+  if (publicRoutes.includes(req.path)) {
     return next()
   }
 
@@ -18,14 +26,13 @@ function authorizeUser(req, res, next) {
   try {
     const payload = jwt.verify(token, config.SECRET)
 
-    // Attaching user info to request
     req.user = {
       userId: payload.userId,
       role: payload.role
     }
     next()
   } catch (ex) {
-    res.send(result.createResult('Invalid Token'))
+    return res.send(result.createResult('Invalid Token'))
   }
 }
 
