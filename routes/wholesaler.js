@@ -9,47 +9,6 @@ router.post('/add', authorizeUser, (req, res) => {
   if (req.user.role !== 'WHOLESALER')
     return res.send(result.createResult('Access denied'))
 
-<<<<<<< HEAD
-  const userId = req.user.userId
-  const { shopName, contactNumber, address, gstNumber } = req.body
-
-  const checkSql = `SELECT WholesalerID FROM wholesaler WHERE UserID = ?`
-
-  pool.query(checkSql, [userId], (err, rows) => {
-    if (rows.length > 0) {
-      return res.send(result.createResult('Already registered'))
-    }
-
-    const insertSql = `
-      INSERT INTO wholesaler(UserID, BusinessName, ContactNumber, Address, GSTNumber)
-      VALUES (?, ?, ?, ?, ?)
-    `
-
-    pool.query(
-      insertSql,
-      [userId, shopName, contactNumber, address, gstNumber],
-      (err, data) => {
-        res.send(result.createResult(err, data))
-      }
-    )
-  })
-})
-
-
-
-router.get('/my', authorizeUser, (req, res) => {
-  if (req.user.role !== 'WHOLESALER')
-    return res.send(result.createResult('Access denied'))
-
-  const userId = req.user.userId
-
-  const sql = `
-    SELECT WholesalerID, BusinessName, ContactNumber, Address, GSTNumber
-    FROM wholesaler
-    WHERE UserID = ?
-  `
-
-=======
   const userId = req.user.userId
 
   const { businessName, contactNumber, address, gstNumber } = req.body
@@ -61,10 +20,10 @@ router.get('/my', authorizeUser, (req, res) => {
   const checkSql = `SELECT WholesalerID FROM wholesaler WHERE UserID = ?`
 
   pool.query(checkSql, [userId], (err, rows) => {
-    if (rows.length > 0) {
-      return res.send(result.createResult('Already registered'))
-    }
-
+  if (err) return res.send(result.createResult(err))
+  if (rows.length > 0)
+    return res.send(result.createResult('Already registered'))
+  
     const insertSql = `
       INSERT INTO wholesaler (UserID, BusinessName, ContactNumber, Address, GSTNumber) VALUES (?, ?, ?, ?, ?)`
 
@@ -115,7 +74,6 @@ router.get('/my', authorizeUser, (req, res) => {
     WHERE UserID = ?
   `
 
->>>>>>> b5749a1 (refine product, retailer, and wholesaler APIs)
   pool.query(sql, [userId], (err, data) => {
     res.send(result.createResult(err, data))
   })
