@@ -10,24 +10,26 @@ router.post('/add', authorizeUser, (req, res) => {
     return res.send(result.createResult('Access denied'))
 
   const userId = req.user.userId
-  const { shopName, contactNumber, address, gstNumber } = req.body
 
-  // 🔐 check if already exists
+  const { businessName, contactNumber, address, gstNumber } = req.body
+
+  if (!businessName || !contactNumber || !address || !gstNumber) {
+    return res.send(result.createResult('Missing required fields'))
+  }
+
   const checkSql = `SELECT WholesalerID FROM wholesaler WHERE UserID = ?`
 
   pool.query(checkSql, [userId], (err, rows) => {
-    if (rows.length > 0) {
-      return res.send(result.createResult('Already registered'))
-    }
-
+  if (err) return res.send(result.createResult(err))
+  if (rows.length > 0)
+    return res.send(result.createResult('Already registered'))
+  
     const insertSql = `
-      INSERT INTO wholesaler(UserID, BusinessName, ContactNumber, Address, GSTNumber)
-      VALUES (?, ?, ?, ?, ?)
-    `
+      INSERT INTO wholesaler (UserID, BusinessName, ContactNumber, Address, GSTNumber) VALUES (?, ?, ?, ?, ?)`
 
     pool.query(
       insertSql,
-      [userId, shopName, contactNumber, address, gstNumber],
+      [userId, businessName, contactNumber, address, gstNumber],
       (err, data) => {
         res.send(result.createResult(err, data))
       }
@@ -35,7 +37,30 @@ router.post('/add', authorizeUser, (req, res) => {
   })
 })
 
+router.get("/dashboard", authorizeUser, (req, res) => {
+  if (req.user.role !== "WHOLESALER") {
+    return res.send(result.createResult("Access denied"))
+  }
+  const userId = req.user.userId
+  const wholesalerSql ="SELECT WholesalerID FROM wholesaler WHERE UserID = ?"
+  pool.query(wholesalerSql, [userId], (err, rows) => {
+    if (err) return res.send(result.createResult(err))
+    if (rows.length === 0)
+      return res.send(result.createResult("Wholesaler profile not found"))
 
+    const wholesalerId = rows[0].WholesalerID
+    const statsSql = `SELECT (SELECT COUNT(*) FROM product WHERE WholesalerID = ? AND IsActive = 1) AS totalProducts,
+                      (SELECT COUNT(DISTINCT oi.OrderID) FROM orderitem oi JOIN product p ON oi.ProductID = p.ProductID WHERE p.WholesalerID = ?) AS totalOrders,
+                      (SELECT IFNULL(SUM(oi.Quantity * oi.PriceAtPurchase), 0) FROM orderitem oi JOIN product p ON oi.ProductID = p.ProductID JOIN orders o ON oi.OrderID = o.OrderID WHERE p.WholesalerID = ?
+                      AND o.DeliveryStatus = 'DELIVERED') AS revenue`
+
+    pool.query(statsSql,[wholesalerId, wholesalerId, wholesalerId],(err, data) => {
+        if (err) return res.send(result.createResult(err))
+        res.send(result.createResult(null, data[0]))
+      }
+    )
+  })
+})
 
 router.get('/my', authorizeUser, (req, res) => {
   if (req.user.role !== 'WHOLESALER')
@@ -54,7 +79,6 @@ router.get('/my', authorizeUser, (req, res) => {
   })
 })
 
-// GET LOGGED-IN WHOLESALER FULL PROFILE
 router.get('/profile', authorizeUser, (req, res) => {
   if (req.user.role !== 'WHOLESALER')
     return res.send(result.createResult('Access denied'))
@@ -106,70 +130,15 @@ router.put('/update', authorizeUser, (req, res) => {
   )
 })
 
+router.get('/retailer/all', (req, res) => {
+  if (req.user.role !== 'RETAILER')
+    return res.send(result.createResult('Access denied'))
 
+  const sql = `SELECT w.WholesalerID, w.BusinessName, w.ContactNumber, w.Address, w.GSTNumber FROM wholesaler w`
 
-
-
-
-
-
-
-
-
-
-
-
-// GET ALL WHOLESALERS (ADMIN ONLY)
-router.get('/all', (req, res) => {
-  if (req.user.role !== 'ADMIN')
-      return res.send(result.createResult('Access denied'))
-  
-  const sql = `SELECT UserID, Name, Email FROM users WHERE Role = 'WHOLESALER'`
   pool.query(sql, (err, data) => {
     res.send(result.createResult(err, data))
   })
 })
-
-// GET WHOLESALER BY ID
-router.get('/:id', (req, res) => {
-    if (req.user.role !== 'ADMIN')
-        return res.send(result.createResult('Access denied'))
-
-    const sql = `SELECT UserID, Name, Email FROM users WHERE UserID = ? AND Role = 'WHOLESALER'`
-    pool.query(sql, [req.params.id], (err, data) => {
-        if (!err && data.length === 0)
-        return res.send(result.createResult('Wholesaler not found'))
-        res.send(result.createResult(err, data[0]))
-    })
-})
-
-// UPDATE WHOLESALER EMAIL (ADMIN ONLY)
-router.put('/:id', (req, res) => {
-    if (req.user.role !== 'ADMIN')
-        return res.send(result.createResult('Access denied'))
-    const { email } = req.body
-    if (!email)
-        return res.send(result.createResult('Email is required'))
-
-    const sql = `UPDATE users SET Email = ? WHERE UserID = ? AND Role = 'WHOLESALER'`
-    pool.query(sql, [email, req.params.id], (err, data) => {
-        res.send(result.createResult(err, data))
-    })
-})
-
-// DELETE WHOLESALER (ADMIN ONLY)
-router.delete('/:id', (req, res) => {
-    if (req.user.role !== 'ADMIN')
-        return res.send(result.createResult('Access denied'))
-    const sql = `DELETE FROM users WHERE UserID = ? AND Role = 'WHOLESALER'`
-    pool.query(sql, [req.params.id], (err, data) => {
-        res.send(result.createResult(err, data))
-    })
-})
-
-
-
-
-
 
 module.exports = router
