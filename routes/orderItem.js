@@ -3,7 +3,8 @@ const pool = require('../utils/db')
 const result = require('../utils/result')
 
 const router = express.Router()
-// ADD ORDER ITEM (RETAILER ONLY)
+
+
 router.post('/', (req, res) => {
   if (req.user.role !== 'RETAILER')
     return res.send(result.createResult('Access denied'))
@@ -13,7 +14,7 @@ router.post('/', (req, res) => {
   if (!OrderID || !ProductID || !Quantity || Quantity <= 0)
     return res.send(result.createResult('Invalid data'))
 
-  // 🔹 Fetch product with IsActive
+  
   const productSql = `
     SELECT Price, StockQuantity, IsActive
     FROM product
@@ -84,7 +85,8 @@ router.post('/', (req, res) => {
   })
 })
 
-// GET ORDER ITEMS BY ORDER ID
+
+
 router.get('/:orderId', (req, res) => {
   if (req.user.role !== 'RETAILER' && req.user.role !== 'ADMIN' && req.user.role !== 'WHOLESALER')
     return res.send(result.createResult('Access denied'))
@@ -102,7 +104,8 @@ router.get('/:orderId', (req, res) => {
 })
 
 
-// GET OWN ORDERS (RETAILER)
+
+
 router.get('/retailer/orders', (req, res) => {
   if (req.user.role !== 'RETAILER')
     return res.send(result.createResult('Access denied'))
@@ -113,7 +116,7 @@ router.get('/retailer/orders', (req, res) => {
   })
 })
 
-// UPDATE DELIVERY STATUS (ADMIN / WHOLESALER)
+
 router.patch('/:id/status', (req, res) => {
   if (!['ADMIN', 'WHOLESALER'].includes(req.user.role))
     return res.send(result.createResult('Access denied'))
@@ -124,7 +127,7 @@ router.patch('/:id/status', (req, res) => {
   })
 })
 
-// calculate GST (RETAILER/ ADMIN / WHOLESALER)
+
 router.get('/:id/gst', (req, res) => {
   const sql = ` SELECT OrderID, SubTotal,GSTPercentage,(SubTotal * GSTPercentage) / 100 AS GSTAmount,
                 (SubTotal + (SubTotal * GSTPercentage) / 100) AS TotalAmount
@@ -135,7 +138,7 @@ router.get('/:id/gst', (req, res) => {
   })
 })
 
-// DELETE ORDER (ADMIN ONLY)
+
 router.delete('/:id', (req, res) => {
   if (req.user.role !== 'ADMIN')
     return res.send(result.createResult('Access denied'))
