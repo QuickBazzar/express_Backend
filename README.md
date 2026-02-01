@@ -117,6 +117,22 @@ http://localhost:5000
 
 ---
 
+## 🧪 API Testing (Postman)
+
+You can test all QuickBazzar backend APIs using the official **Postman Collection**:
+
+🔗 **Postman Collection Link:**
+[https://adityakotame17-4009243.postman.co/workspace/QuickBazzar~cf2c62db-ca36-444d-9203-2118d6844693/collection/50660794-784788d2-9935-4d79-b856-7fd546ee8e67](https://adityakotame17-4009243.postman.co/workspace/QuickBazzar~cf2c62db-ca36-444d-9203-2118d6844693/collection/50660794-784788d2-9935-4d79-b856-7fd546ee8e67)
+
+### How to Use
+
+1. Open the link in Postman
+2. Fork or import the collection into your workspace
+3. Set environment variables (e.g., `BASE_URL`, `TOKEN`)
+4. Start testing authentication, products, and order APIs
+
+---
+
 ## ☁️ Deployment
 
 This backend can be deployed on **Render**, **Railway**, or any Node-compatible cloud platform.
@@ -136,7 +152,7 @@ General steps:
 ## 👥 Contributors
 
 * **Aditya Kotame**
-* **Abhishek Pagar**
+* **Abhishek Pagar** 
 * **Anuprita Borude**
 
 ---
