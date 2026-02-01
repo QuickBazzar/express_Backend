@@ -1,7 +1,4 @@
 const express = require('express')
-const path = require('path')
-const multer = require('multer')
-
 const pool = require('../utils/db')
 const result = require('../utils/result')
 const authorizeUser = require('../utils/authuser')
