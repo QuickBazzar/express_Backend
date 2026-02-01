@@ -11,23 +11,29 @@ router.post('/add', authorizeUser, (req, res) => {
 
 <<<<<<< HEAD
   const userId = req.user.userId
-  const { shopName, contactNumber, address, gstNumber } = req.body
 
+<<<<<<< HEAD
+=======
+  const { businessName, contactNumber, address, gstNumber } = req.body
+
+  if (!businessName || !contactNumber || !address || !gstNumber) {
+    return res.send(result.createResult('Missing required fields'))
+  }
+
+>>>>>>> ae2425e (add new wholesaler APIs and update existing APIs)
   const checkSql = `SELECT WholesalerID FROM wholesaler WHERE UserID = ?`
 
   pool.query(checkSql, [userId], (err, rows) => {
-    if (rows.length > 0) {
-      return res.send(result.createResult('Already registered'))
-    }
-
+  if (err) return res.send(result.createResult(err))
+  if (rows.length > 0)
+    return res.send(result.createResult('Already registered'))
+  
     const insertSql = `
-      INSERT INTO wholesaler(UserID, BusinessName, ContactNumber, Address, GSTNumber)
-      VALUES (?, ?, ?, ?, ?)
-    `
+      INSERT INTO wholesaler (UserID, BusinessName, ContactNumber, Address, GSTNumber) VALUES (?, ?, ?, ?, ?)`
 
     pool.query(
       insertSql,
-      [userId, shopName, contactNumber, address, gstNumber],
+      [userId, businessName, contactNumber, address, gstNumber],
       (err, data) => {
         res.send(result.createResult(err, data))
       }
@@ -35,7 +41,30 @@ router.post('/add', authorizeUser, (req, res) => {
   })
 })
 
+router.get("/dashboard", authorizeUser, (req, res) => {
+  if (req.user.role !== "WHOLESALER") {
+    return res.send(result.createResult("Access denied"))
+  }
+  const userId = req.user.userId
+  const wholesalerSql ="SELECT WholesalerID FROM wholesaler WHERE UserID = ?"
+  pool.query(wholesalerSql, [userId], (err, rows) => {
+    if (err) return res.send(result.createResult(err))
+    if (rows.length === 0)
+      return res.send(result.createResult("Wholesaler profile not found"))
 
+    const wholesalerId = rows[0].WholesalerID
+    const statsSql = `SELECT (SELECT COUNT(*) FROM product WHERE WholesalerID = ? AND IsActive = 1) AS totalProducts,
+                      (SELECT COUNT(DISTINCT oi.OrderID) FROM orderitem oi JOIN product p ON oi.ProductID = p.ProductID WHERE p.WholesalerID = ?) AS totalOrders,
+                      (SELECT IFNULL(SUM(oi.Quantity * oi.PriceAtPurchase), 0) FROM orderitem oi JOIN product p ON oi.ProductID = p.ProductID JOIN orders o ON oi.OrderID = o.OrderID WHERE p.WholesalerID = ?
+                      AND o.DeliveryStatus = 'DELIVERED') AS revenue`
+
+    pool.query(statsSql,[wholesalerId, wholesalerId, wholesalerId],(err, data) => {
+        if (err) return res.send(result.createResult(err))
+        res.send(result.createResult(null, data[0]))
+      }
+    )
+  })
+})
 
 router.get('/my', authorizeUser, (req, res) => {
   if (req.user.role !== 'WHOLESALER')
