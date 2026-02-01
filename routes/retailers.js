@@ -3,7 +3,6 @@ const pool = require('../utils/db')
 const result = require('../utils/result')
 const router = express.Router()
 
-
 // GET ALL RETAILERS (ADMIN / WHOLESALER)
 router.get('/all', (req, res) => {
   if (!['ADMIN', 'WHOLESALER'].includes(req.user.role))
@@ -123,7 +122,7 @@ router.patch('/update/wallet/:id', (req, res) => {
 
   // RETAILER can update only their own retailer wallet balance
   else {
-    sql = `UPDATE retailer SET WalletBalance = WalletBalance + ? WHERE RetailerID = ?`
+    sql = `UPDATE retailer SET WalletBalance = WalletBalance + ? WHERE RetailerID = ? AND UserID = ?`
     params = [WalletBalance, req.params.id, req.user.userId]
   }
 

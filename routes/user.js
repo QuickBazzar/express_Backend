@@ -8,23 +8,24 @@ const config = require('../utils/config')
 
 const router = express.Router()
 
-// SIGNUP (APP - RETAILER ONLY)
 router.post('/signup', (req, res) => {
   const { name, email, password } = req.body
   const role = 'RETAILER'
 
   bcrypt.hash(password, config.SALT_ROUND, (err, hash) => {
-    if (err) 
-        return res.send(result.createResult(err))
+    if (err)
+      return res.send(result.createResult(err))
 
-    const sql = `INSERT INTO users (Name, Email, PasswordHash, Role) VALUES (?, ?, ?, ?)`
+    const sql =
+      `INSERT INTO users (Name, Email, PasswordHash, Role)
+       VALUES (?, ?, ?, ?)`
+
     pool.query(sql, [name, email, hash, role], (err, data) => {
       res.send(result.createResult(err, data))
     })
   })
 })
 
-// SIGNI-N
 router.post('/signin', (req, res) => {
   const { email, password } = req.body
   const sql = `SELECT * FROM users WHERE Email = ?`
@@ -35,6 +36,9 @@ router.post('/signin', (req, res) => {
       return res.send(result.createResult('Invalid Email'))
 
     bcrypt.compare(password, data[0].PasswordHash, (err, status) => {
+      if (err)
+        return res.send(result.createResult(err))
+
       if (!status)
         return res.send(result.createResult('Invalid Password'))
 
@@ -57,7 +61,6 @@ router.post('/signin', (req, res) => {
   })
 })
 
-// WEB SIGNUP (ADMIN / WHOLESALER / RETAILER)
 router.post('/web/signup', (req, res) => {
   const { name, email, password, role } = req.body
 
@@ -65,22 +68,29 @@ router.post('/web/signup', (req, res) => {
     return res.send(result.createResult('Invalid role'))
 
   bcrypt.hash(password, config.SALT_ROUND, (err, hash) => {
-    if (err) 
-        return res.send(result.createResult(err))
+    if (err)
+      return res.send(result.createResult(err))
 
-    const sql = `INSERT INTO users (Name, Email, PasswordHash, Role) VALUES (?, ?, ?, ?)`
+    const sql =
+      `INSERT INTO users (Name, Email, PasswordHash, Role)
+       VALUES (?, ?, ?, ?)`
+
     pool.query(sql, [name, email, hash, role], (err, data) => {
       res.send(result.createResult(err, data))
     })
   })
 })
 
-
-// GET OWN PROFILE
 router.get('/profile', (req, res) => {
   const uid = req.user.userId
 
-  pool.query(`SELECT Name, Email, Role FROM users WHERE UserID = ?`,[uid], (err, data) => {
+  pool.query(
+    `SELECT Name, Email, Role FROM users WHERE UserID = ?`,
+    [uid],
+    (err, data) => {
+      if (err)
+        return res.send(result.createResult(err))
+
       if (data.length === 0)
         return res.send(result.createResult('User not found'))
 
@@ -89,10 +99,10 @@ router.get('/profile', (req, res) => {
   )
 })
 
-// UPDATE OWN EMAIL
 router.patch('/update-user', (req, res) => {
   const uid = req.user.userId
   const { email } = req.body
+
   const sql = `UPDATE users SET Email=? WHERE UserID=?`
 
   pool.query(sql, [email, uid], (err, data) => {
@@ -100,24 +110,37 @@ router.patch('/update-user', (req, res) => {
   })
 })
 
-// UPDATE PASSWORD (OWN ACCOUNT)
 router.patch('/update-password', (req, res) => {
   const uid = req.user.userId
   const { oldPassword, newPassword } = req.body
-  const sql = `SELECT PasswordHash FROM users WHERE UserID=?`
 
-  pool.query(sql, [uid], (err, data) => {
+  pool.query(
+    `SELECT PasswordHash FROM users WHERE UserID=?`,
+    [uid],
+    (err, data) => {
+      if (err)
+        return res.send(result.createResult(err))
+
       if (data.length === 0)
         return res.send(result.createResult('User not found'))
 
       bcrypt.compare(oldPassword, data[0].PasswordHash, (err, status) => {
+        if (err)
+          return res.send(result.createResult(err))
+
         if (!status)
           return res.send(result.createResult('Old password incorrect'))
 
         bcrypt.hash(newPassword, config.SALT_ROUND, (err, hash) => {
+          if (err)
+            return res.send(result.createResult(err))
+
           const sql = `UPDATE users SET PasswordHash=? WHERE UserID=?`
-          pool.query(sql,[hash, uid], (err) =>{
-            res.send(result.createResult(err, 'Password updated successfully'))
+
+          pool.query(sql, [hash, uid], (err) => {
+            res.send(
+              result.createResult(err, 'Password updated successfully')
+            )
           })
         })
       })
